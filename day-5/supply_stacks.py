@@ -8,8 +8,8 @@ def parse_map(m: list, stack_width = 4):
     for x in range(num_stacks):
         supply_stacks.append([])
         for line in m[1:]:
-            if line[x*4 + 1] != " ":
-                supply_stacks[x].append(line[x*4+1])
+            if line[x*stack_width + 1] != " ":
+                supply_stacks[x].append(line[x*stack_width+1])
     return supply_stacks
 
 def execute_move(instructions: str, supply_map: list):
