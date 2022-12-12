@@ -27,18 +27,31 @@ def get_sums():
         print(i, found[-1])
     return sum(found)
             
+def get_pixels():
+    output = ""
+    for i in range(1, 240):
+        char = "."
+        if i in values:
+            if i%40 - 1 <= values[i] <= i%40 + 1:
+                char = "#"
+        output += char
+    for x in range(0, 240, 40):
+        print(output[x:x+41])
+
 
 x = 1
 time = 1
-values = {}
+values = {1: 1}
 
 with open("day-10/input.txt") as instructions:
     for instruction in instructions:
         if instruction.strip()[0] == 'a':
             add(int(instruction.strip().split( )[1]))
+            values[time-1] = x
+            values[time] = x
         else:
             noop()
-        values[time] = x
+            values[time] = x
 
 print(values)
-print(get_sums())
+print(get_pixels())
