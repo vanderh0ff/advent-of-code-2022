@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 class vector():
     def __init__(self,x,y):
@@ -23,6 +23,12 @@ class vector():
     
     def delta(self, othervec):
         return abs(self.x - othervec.x) + abs(self.y - othervec.y)
+    
+    def normalize(self):
+        if self.x != 0:
+            self.x = self.x // abs(self.x)
+        if self.y != 0:
+            self.y = self.y // abs(self.y)
 
 rope = [
     vector(0, 0),
@@ -85,28 +91,10 @@ def move(direction:str, knot: vector):
 # You just need to work out where the tail goes as the head follows a series of motions. Assume the head and the tail both start at the same position, overlapping.
 def update(head, tail):
     delta = head - tail
-    if delta.x == 0 and abs(delta.y) == 2 or delta.y == 0  and abs(delta.x) == 2:
-        if delta.x > 0:
-            tail.x += 1
-        if delta.x < 0:
-            tail.x -= 1
-        if delta.y > 0:
-            tail.y += 1
-        if delta.y < 0:
-            tail.y -= 1
-    elif abs(delta.x) > 1 and abs(delta.y) == 1 or abs(delta.x) == 1 and abs(delta.y) > 1:
-        if delta.x > 1:
-            tail.x += 1
-            tail.y = head.y
-        if delta.x < -1:
-            tail.x -= 1
-            tail.y = head.y
-        if delta.y > 1:
-            tail.y += 1
-            tail.x = head.x
-        if delta.y < -1:
-            tail.y -= 1
-            tail.x = head.x
+    if abs(delta.y) > 1 or abs(delta.x) > 1:
+        delta.normalize()
+        tail = tail + delta
+    return tail
 
 def move_rope(direction):
     global rope
@@ -114,7 +102,7 @@ def move_rope(direction):
     logging.debug(f"moving head segment {direction}")
     for i in range(len(rope) - 1):
         logging.debug(f"updating rope segment {rope[i]},{rope[i+1]}")
-        update(rope[i], rope[i+1])
+        rope[i+1] = update(rope[i], rope[i+1])
         logging.debug(f"updated rope segment {rope[i]},{rope[i+1]}")
     logging.debug(rope)
 
@@ -126,8 +114,7 @@ def read_instructions(instruction_file: str):
             count = int(parts[1])
             for x in range(count):
                 move_rope(direction)
-                trail.add(rope[-1])
-                render() 
+                trail.add((rope[-1].x,rope[-1].y))
 
 
 
