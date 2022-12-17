@@ -2,6 +2,34 @@ import logging
 import math
 logging.basicConfig(level=logging.DEBUG)
 
+class node():
+    def __init__(self,x,y,parent=None):
+        self.x = x
+        self.y = y
+        self.parent = parent
+        
+    def __repr__(self):
+        return f'{self.x} {self.y}'
+    
+    def __eq__(self, o):
+        if self.x == o.x and self.y == o.y:
+            return True
+        return False
+
+    def __eq__(self, o: tuple):
+        if self.x == o[0] and self.y == o[1]:
+            return True
+        return False
+
+    def get_distance(self, dest):
+        dx = self.x - p2[0]
+        dy = self.y - p2[1]
+        return dx ** 2 + dy ** 2
+
+def get_distance(p1, p2):
+    dx = p1[0] - p2[0]
+    dy = p1[1] - p2[1]
+    return dx ** 2 + dy ** 2
 
 def make_heightmap(filelocation: str):
     start_x,start_y,dest_x,dest_y = 0,0,0,0
@@ -60,40 +88,46 @@ def get_moves(x,y, heightmap):
     return possible_moves
 
 
-def get_distance(p1, p2):
-    dx = p1[0] - p2[0]
-    dy = p1[1] - p2[1]
-    return math.sqrt(dx ** 2 + dy ** 2)
 
 
 
-def move_forward(position, destination, heightmap):
-    if position == destination:
-        return position
-    moves = get_moves(position[0], position[1], heightmap)
-    moves.sort(key=lambda x : get_distance(x, destination),reverse=True)
-    for move in moves:
-        return  [position, move_forward(position, destination, heightmap)]
+# def move_forward(position, destination, heightmap):
+#     if position == destination:
+#         return position
+#     moves = get_moves(position[0], position[1], heightmap)
+#     moves.sort(key=lambda x : self.get_distance(destination),reverse=True)
+#     for move in moves:
+#         return  [position, move_forward(position, destination, heightmap)]
 
 
 starting_conditions = make_heightmap("day-12/input.txt")
 heightmap = starting_conditions['heightmap']
 current_position = starting_conditions['start']
 destination = starting_conditions['dest']
-print(move_forward(current_position, destination, heightmap))
-# visited = []
-# path = []
-# to_visit = []
-# to_visit.append(current_postion)
-# while len(to_visit) > 0 and current_postion != destination:
-#     current_postion = to_visit.pop()
-#     moves = get_moves(current_postion[0], current_postion[1], heightmap)
-#     visited.append(current_postion)
-#     moves.sort(key=lambda x : get_distance(x, destination),reverse=True)
-#     for move in moves:
-#         if move not in visited:
-#             to_visit.append(move)
-#     logging.debug(f'current position: {current_postion}')
-#     logging.debug(f'visited {visited}')
-#     print_map(heightmap,current_postion )
-# print(len(visited))
+# print(move_forward(current_position, destination, heightmap))
+visited = []
+path = []
+to_visit = []
+to_visit.append(node(current_position[0], current_position[1]))
+while len(to_visit) > 0 and current_position != destination:
+    current_position = to_visit.pop()
+    visited.append(current_position)
+    moves = get_moves(current_position.x, current_position.y, heightmap)
+    moves.sort(key=lambda x : get_distance(x, destination),reverse=True)
+    for move in moves:
+        if move not in visited:
+            to_visit.append(node(move[0], move[1], current_position))
+    logging.debug(f'current position: {current_position}')
+    logging.debug(f'visited {visited}')
+
+def get_path(n, path):
+    if n.parent is None:
+        path.append(n)
+        return path
+    path.append(n)
+    return get_path(n.parent, path)
+
+
+path = get_path(current_position, [])
+print(len(path)) 
+
