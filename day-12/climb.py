@@ -1,35 +1,18 @@
 import logging
-import math
+import heapq
+import copy
+import os
+from termcolor import colored
+
+from node import Node, Position
 logging.basicConfig(level=logging.DEBUG)
 
-class node():
-    def __init__(self,x,y,parent=None):
-        self.x = x
-        self.y = y
-        self.parent = parent
-        
-    def __repr__(self):
-        return f'{self.x} {self.y}'
-    
-    def __eq__(self, o):
-        if self.x == o.x and self.y == o.y:
-            return True
-        return False
-
-    def __eq__(self, o: tuple):
-        if self.x == o[0] and self.y == o[1]:
-            return True
-        return False
-
-    def get_distance(self, dest):
-        dx = self.x - p2[0]
-        dy = self.y - p2[1]
-        return dx ** 2 + dy ** 2
-
-def get_distance(p1, p2):
-    dx = p1[0] - p2[0]
-    dy = p1[1] - p2[1]
-    return dx ** 2 + dy ** 2
+def get_path(n, path):
+    if n.parent is None:
+        path.append(n)
+        return path
+    path.append(n)
+    return get_path(n.parent, path)
 
 def make_heightmap(filelocation: str):
     start_x,start_y,dest_x,dest_y = 0,0,0,0
@@ -48,86 +31,113 @@ def make_heightmap(filelocation: str):
                     char = 'z'
                 heightmap[y].append(char)
     return {"heightmap": heightmap,
-            "start": (start_x, start_y),
-            "dest": (dest_x,dest_y)}
-
-
-def get_moves_diagonal(x,y, heightmap):
-    value = heightmap[y][x]
-    max_x = len(heightmap[0])
-    max_y = len(heightmap)
-    min_x = 0
-    min_y = 0
-    possible_moves = []
-    for pos_x in [x-1, x, x+1]:
-        for pos_y in [y-1, y, y+1]:
-            if max_x > pos_x > min_x and max_y > pos_y > min_y:
-                if ord(heightmap[pos_y][pos_x]) - ord(heightmap[y][x]) <= 1:
-                    possible_moves.append((pos_x,pos_y))
-    return possible_moves
+            "start": Position(x=start_x, y=start_y, z=1),
+            "dest": Position(x=dest_x, y=dest_y, z=26)}
 
 
 def print_map(heightmap,position):
-    heightmap[position[1]][position[0]] = 'X'
+    heightmap[position.x,position.y] = 'X'
     for y in heightmap:
         print(y)
 
+def print_path(current, path):
+    global heightmap
+    hm = copy.deepcopy(heightmap)
+    for node in path:
+        hm[node.position.y][node.position.x] = colored("*", 'red')
+    hm[current.position.y][current.position.x] = colored('X', 'red')
+    for line in hm:
+        print("".join(line))
+        
 
-def get_moves(x,y, heightmap):
-    value = heightmap[y][x]
+
+
+def get_possible_moves(current):
+    global heightmap
+    global visited
+    global destination
     max_x = len(heightmap[0])
     max_y = len(heightmap)
     min_x = -1
     min_y = -1
     possible_moves = []
-    for pos_x,pos_y in [(x-1, y), (x, y-1), (x, y+1), (x+1, y)]:
-            if max_x > pos_x > min_x and max_y > pos_y > min_y:
-                logging.debug(f'height diff of step {ord(heightmap[pos_y][pos_x]) - ord(heightmap[y][x])}')
-                if ord(heightmap[pos_y][pos_x]) - ord(heightmap[y][x]) <= 1:
-                    possible_moves.append((pos_x,pos_y))
+    for pos_x,pos_y in [(current.position.x-1, current.position.y),
+                        (current.position.x, current.position.y-1),
+                        (current.position.x, current.position.y+1),
+                        (current.position.x+1, current.position.y)
+                        ]:
+        if max_x > pos_x > min_x and max_y > pos_y > min_y:
+            height = ord(heightmap[pos_y][pos_x] )+1 - ord('a')
+            if height <= current.position.z + 1:
+                pm = Node(Position(pos_x,pos_y,height),parent=current) 
+                pm.calc_values(destination)
+                if pm in visited:
+                    old_loc = visited.index(pm)
+                    #old = visited[old_loc]
+                    #if pm.g < old.g:
+                    #    visited.remove(old)
+                    #    visited.append(pm)
+                possible_moves.append(Position(pos_x,pos_y, height))
     return possible_moves
 
 
+def push_moves_to_heap(moves, current):
+    global start
+    global destination
+    global to_visit
+    for move in moves:
+        possible =  Node(move, parent=current)
+        possible.calc_values(destination)
+        if possible in visited:
+            logging.debug(f"found possible node already visited {possible}")
+            #old =  visited[visited.index(possible)]
+            #logging.debug(f"new g: {possible.g}  old g: {old.g}")
+            #if possible.g < old.g:
+            #    visited.remove(old)
+            #    heapq.heappush(to_visit, possible)
+        else:
+            logging.debug(f"pushing new Node to heap {possible}")
+            heapq.heappush(to_visit, possible)
+    
 
 
-
-# def move_forward(position, destination, heightmap):
-#     if position == destination:
-#         return position
-#     moves = get_moves(position[0], position[1], heightmap)
-#     moves.sort(key=lambda x : self.get_distance(destination),reverse=True)
-#     for move in moves:
-#         return  [position, move_forward(position, destination, heightmap)]
-
-
+# load height map and make variables 
 starting_conditions = make_heightmap("day-12/input.txt")
 heightmap = starting_conditions['heightmap']
-current_position = starting_conditions['start']
+start = starting_conditions['start']
 destination = starting_conditions['dest']
-# print(move_forward(current_position, destination, heightmap))
-visited = []
+root_node = Node(start)
+root_node.calc_values(destination)
 path = []
+visited = []
 to_visit = []
-to_visit.append(node(current_position[0], current_position[1]))
-while len(to_visit) > 0 and current_position != destination:
-    current_position = to_visit.pop()
-    visited.append(current_position)
-    moves = get_moves(current_position.x, current_position.y, heightmap)
-    moves.sort(key=lambda x : get_distance(x, destination),reverse=True)
-    for move in moves:
-        if move not in visited:
-            to_visit.append(node(move[0], move[1], current_position))
-    logging.debug(f'current position: {current_position}')
-    logging.debug(f'visited {visited}')
 
-def get_path(n, path):
-    if n.parent is None:
-        path.append(n)
-        return path
-    path.append(n)
-    return get_path(n.parent, path)
+# start the pathfinding logic by initilizing the heap with the starting node
+# then keep searching for valid moves and adding them to the heap
+# evaluating the nodes with the lowest available metrics first
+# end when our current positiion is the desitination
+heapq.heappush(to_visit,root_node)
+while len(to_visit) > 0:
+    os.system('clear')
+    logging.debug("*"*40)
+    logging.debug("start of loop")
+    logging.debug("*"*40)
+    current = heapq.heappop(to_visit)
+    logging.debug(print_path(current, get_path(current, [])))
+    if  current.position == destination :
+        print(get_path(current,[]))
+        print(len(get_path(current,[])))
+        break
+    visited.append(current)
+    possible_moves = get_possible_moves(current)
+    push_moves_to_heap(possible_moves, current)
+    logging.debug(current)
+    logging.debug(f'to_visit_length: {len(to_visit)}')
+    #logging.debug(f'to_visit: {to_visit}')
+    logging.debug(f'visited_length: {len(visited)}')
 
 
-path = get_path(current_position, [])
-print(len(path)) 
+
+
+
 
