@@ -90,14 +90,15 @@ def push_moves_to_heap(moves, current):
         possible.calc_values(destination)
         if possible in visited:
             logging.debug(f"found possible node already visited {possible}")
-            #old =  visited[visited.index(possible)]
-            #logging.debug(f"new g: {possible.g}  old g: {old.g}")
-            #if possible.g < old.g:
-            #    visited.remove(old)
-            #    heapq.heappush(to_visit, possible)
+            old =  visited[visited.index(possible)]
+            logging.debug(f"new g: {possible.g}  old g: {old.g}")
+            if possible.g < old.g:
+                visited.remove(old)
+                heapq.heappush(to_visit, possible)
         else:
             logging.debug(f"pushing new Node to heap {possible}")
-            heapq.heappush(to_visit, possible)
+            if possible not in to_visit:
+                heapq.heappush(to_visit, possible)
     
 
 
