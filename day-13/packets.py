@@ -8,7 +8,6 @@ def get_packet_pairs(file_location):
         packets = input.read()
         return packets.split('\n\n')
 
-
 def compare(packet1 , packet2):
     logging.debug(f'compare types {type(packet1)} and {type(packet2)}')
     logging.debug(f'compare values {packet1} and {packet2}')
@@ -20,14 +19,10 @@ def compare(packet1 , packet2):
                 logging.debug(f'packet1 is an int {packet1[i]}')
                 if packet1[i] > packet2[i]:
                     return False
-                if packet1[i] < packet2[i]:
-                    return True
             if type(packet1[i]) == type([]):
                 logging.debug(f'packet1 is a list {packet1[i]}')
                 if not compare(packet1[i],packet2[i]):
                     return False
-                if len(packet1[i]) == 0:
-                    return True
                 if len(packet2[i]) == 0:
                     return False
         else:
@@ -83,10 +78,13 @@ def compare_packets(packets):
     
 
 
-packet_pairs = get_packet_pairs('input.txt')
-for packets in packet_pairs:
-    res = compare_packets(packets)
-    print(res)
+packet_pairs = get_packet_pairs('final_input.txt')
+correct_indexes = []
+for packet_num in range(len(packet_pairs)):
+    logging.debug(f'compairing packet pair {packet_num}')
+    if compare_packets(packet_pairs[packet_num]):
+        correct_indexes.append(packet_num+1)
+    print(sum(correct_indexes))
 
 
 
